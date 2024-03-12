@@ -2,7 +2,7 @@
 Skyline API Server
 ==================
 
-`English <./README/README-en.rst>`__ \| `简体中文 <./README/README-zh_CN.rst>`__ \| `한국어 <./README/README-ko_KR.rst>`__
+English \| `简体中文 <./README-zh_CN.rst>`__ \| `한국어 <./README-ko_KR.rst>`__
 
 Skyline is an OpenStack dashboard optimized by UI and UE, support
 OpenStack Train+. It has a modern technology stack and ecology, is
@@ -48,8 +48,8 @@ Resources
 -  `Wiki <https://wiki.openstack.org/wiki/Skyline>`__
 -  `Bug Tracker <https://launchpad.net/skyline-apiserver>`__
 
-Quick Start
------------
+Container Environment Quick Start
+----------------------------------
 
 Prerequisites
 ~~~~~~~~~~~~~
@@ -79,10 +79,65 @@ Configure
    -  system_user_name
    -  system_user_password
 
-Deployment with Sqlite
-~~~~~~~~~~~~~~~~~~~~~~
+   Replace SKYLINE_DBPASS, DB_SERVER, KEYSTONE_SERVER and SKYLINE_SERVICE_PASSWORD with a correct value.
 
-1. Run the skyline_bootstrap container to bootstrap
+   .. code:: vim
+
+      default:
+         database_url: mysql://skyline:SKYLINE_DBPASS@DB_SERVER:3306/skyline
+         debug: true
+         log_dir: /var/log/skyline
+      openstack:
+         keystone_url: http://KEYSTONE_SERVER:5000/v3/
+         system_user_password: SKYLINE_SERVICE_PASSWORD
+
+2. create database and add role
+
+   Use the database access client to connect to the database server as the root user:
+   (If openstack is already using the database, you can use it as it is.)
+
+   .. code:: mysql
+
+      create database skyline DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;
+      create user skyline@localhost identified by 'skyline_pass';
+      grant all privileges on skyline.* to 'skyline'@localhost;
+      create user skyline@'%' identified by 'skyline_pass';
+      grant all privileges on skyline.* to 'skyline'@'%';
+      FLUSH PRIVILEGES;
+      exit
+
+   Source the admin credentials to gain access to admin-only CLI commands:
+
+   .. code:: bash
+
+      . admin-openrc
+
+   To create the service credentials, complete these steps:
+
+   .. code:: bash
+
+      openstack user create --domain default --password-prompt skyline
+
+      User Password:
+      Repeat User Password:
+      +---------------------+----------------------------------+
+      | Field               | Value                            |
+      +---------------------+----------------------------------+
+      | domain_id           | default                          |
+      | enabled             | True                             |
+      | id                  | 1qaz2wsx3edc4rfv5tgb6yhn7ujm8ikl |
+      | name                | skyline                          |
+      | options             | {}                               |
+      | password_expires_at | None                             |
+      +---------------------+----------------------------------+
+
+   Add the admin role to the skyline user:
+
+   .. code:: bash
+
+      openstack role add --project service --user skyline admin
+
+3. Run the skyline_bootstrap container to bootstrap
 
    .. code:: bash
 
@@ -92,8 +147,25 @@ Deployment with Sqlite
 
       # Check bootstrap is normal `exit 0`
       docker logs skyline_bootstrap
+   
 
-2. Run the skyline service after bootstrap is complete
+   If you see the following message, it means that the bootstrap server is successful:
+
+   .. code:: bash
+
+      + echo '/usr/local/bin/gunicorn -c /etc/skyline/gunicorn.py skyline_apiserver.main:app'
+      + mapfile -t CMD
+      ++ xargs -n 1
+      ++ tail /run_command
+      + [[ -n 0 ]]
+      + cd /skyline-apiserver/
+      + make db_sync
+      alembic -c skyline_apiserver/db/alembic/alembic.ini upgrade head
+      2022-08-19 07:49:16.004 | INFO     | alembic.runtime.migration:__init__:204 - Context impl MySQLImpl.
+      2022-08-19 07:49:16.005 | INFO     | alembic.runtime.migration:__init__:207 - Will assume non-transactional DDL.
+      + exit 0
+
+4. Run the skyline service after bootstrap is complete
 
    .. code:: bash
 
@@ -111,10 +183,163 @@ Deployment with Sqlite
 
       docker run -d --name skyline --restart=always -v /var/log/skyline:/var/log/skyline -v /etc/skyline/skyline.yaml:/etc/skyline/skyline.yaml -v /tmp/skyline:/tmp --net=host 99cloud/skyline:latest
 
-Deployment with MariaDB
-~~~~~~~~~~~~~~~~~~~~~~~
 
-https://docs.openstack.org/skyline-apiserver/latest/install/docker-install-ubuntu.html
+Non-container Skyline-apiserver Quick Start
+-------------------------------------------
+
+If you want to install skyline without container env. follow this guide.
+The order may be a little different from the above ``container Quick Start``.
+
+Prerequisites
+~~~~~~~~~~~~~
+
+-  An OpenStack environment that runs at least core components and can
+   access OpenStack components through Keystone endpoints
+-  Ubuntu server where nginx can be installed. - [other os require confirm.]
+   (using Apache version is progress in the develop.)
+
+Configure
+~~~~~~~~~
+
+1. create database and add role
+
+   Use the database access client to connect to the database server as the root user:
+   (If openstack is already using the database, you can use it as it is.)
+
+   .. code:: mysql
+
+      create database skyline DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;
+      create user skyline@localhost identified by 'skyline_pass';
+      grant all privileges on skyline.* to 'skyline'@localhost;
+      create user skyline@'%' identified by 'skyline_pass';
+      grant all privileges on skyline.* to 'skyline'@'%';
+      FLUSH PRIVILEGES;
+      exit
+
+   Source the admin credentials to gain access to admin-only CLI commands:
+
+   .. code:: bash
+
+      . admin-openrc
+
+   To create the service credentials, complete these steps:
+
+   .. code:: bash
+
+      openstack user create --domain default --password-prompt skyline
+
+      User Password:
+      Repeat User Password:
+      +---------------------+----------------------------------+
+      | Field               | Value                            |
+      +---------------------+----------------------------------+
+      | domain_id           | default                          |
+      | enabled             | True                             |
+      | id                  | 1qaz2wsx3edc4rfv5tgb6yhn7ujm8ikl |
+      | name                | skyline                          |
+      | options             | {}                               |
+      | password_expires_at | None                             |
+      +---------------------+----------------------------------+
+
+   Add the admin role to the skyline user:
+
+   .. code:: bash
+
+      openstack role add --project service --user skyline admin
+
+2. apt packages install
+
+   .. code:: bash
+
+      #apt package install
+      apt install python3-dev make gcc
+
+      #if using ssl
+      apt install ssl-cert
+
+
+3. git clone and checkout
+
+   .. code:: bash
+
+      git clone https://opendev.org/openstack/skyline-apiserver.git
+      cd skyline-apiserver
+      git checkout master # support stable/zed, stable/2023.1, stable/2023.2 
+
+   .. code:: bash
+      
+      #python package install
+      pip3 install skyline-apiserver/
+
+4. sample file copy and setting
+
+   copy file
+
+   .. code:: bash
+      
+      #gunicorn
+      cp skyline-apiserver/etc/gunicorn.py /etc/skyline/gunicorn.py
+      #skyline config file
+      cp skyline-apiserver/etc/skyline.yaml.sample /etc/skyline/skyline.yaml
+
+
+   Edit the ``/etc/skyline/skyline.yaml`` file
+
+   You can refer to the `sample file <etc/skyline.yaml.sample>`__, and
+   modify the following parameters according to the actual environment
+
+   -  database_url
+   -  keystone_url
+   -  default_region
+   -  interface_type
+   -  system_project_domain
+   -  system_project
+   -  system_user_domain
+   -  system_user_name
+   -  system_user_password
+
+   Replace SKYLINE_DBPASS, DB_SERVER, KEYSTONE_SERVER and SKYLINE_SERVICE_PASSWORD with a correct value.
+
+   .. code:: vim
+
+      default:
+         database_url: mysql://skyline:SKYLINE_DBPASS@DB_SERVER:3306/skyline
+         debug: true
+         log_dir: /var/log/skyline
+      openstack:
+         keystone_url: http://KEYSTONE_SERVER:5000/v3/ 
+         #keystone_url: http://KEYSTONE_SERVER:5000/identity
+         system_user_password: SKYLINE_SERVICE_PASSWORD
+
+5. db sync
+
+   .. code:: bash
+
+      make db_sync
+
+6. deamon setting
+
+   Edit the ``vim /etc/systemd/system/skyline-apiserver.service`` file
+
+   .. code:: vim
+      [Unit]
+      Description=Skyline APIServer
+
+      [Service]
+      Type=simple
+      ExecStart=/usr/local/bin/gunicorn -c /etc/skyline/gunicorn.py skyline_apiserver.main:app
+      LimitNOFILE=32768
+
+      [Install]
+      WantedBy=multi-user.target
+
+   daemon start
+
+   .. code:: bash
+      systemctl daemon-reload
+      systemctl enable skyline-apiserver
+      systemctl start skyline-apiserver
+      systemctl status skyline-apiserver
 
 API Doc
 ~~~~~~~~~
@@ -126,6 +351,14 @@ Test Access
 
 You can now access the dashboard: ``https://<ip_address>:9999``
 
+openstack official docs
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+https://docs.openstack.org/skyline-apiserver/latest/install/docker-install-ubuntu.html
+
+
+
+   
 Develop Skyline-apiserver
 -------------------------
 
@@ -216,17 +449,17 @@ Devstack Integration
 --------------------
 
 `Fast integration with Devstack to build an
-environment. <./devstack/README.rst>`__
+environment. <../devstack/README.rst>`__
 
 Kolla Ansible Deployment
 ------------------------
 
-`Kolla Ansible to build an environment. <./kolla/README.md>`__
+`Kolla Ansible to build an environment. <../kolla/README.md>`__
 
 |image1|
 
-.. |image0| image:: ./doc/source/images/logo/OpenStack_Project_Skyline_horizontal.png
-.. |image1| image:: ./doc/source/images/logo/nine-color-deer-64.png
+.. |image0| image:: ../doc/source/images/logo/OpenStack_Project_Skyline_horizontal.png
+.. |image1| image:: ../doc/source/images/logo/nine-color-deer-64.png
 
 FAQ
 ---

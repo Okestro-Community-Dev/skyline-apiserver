@@ -2,7 +2,7 @@
 Skyline API Server
 ==================
 
-`English <./README/README-en.rst>`__ \| `简体中文 <./README/README-zh_CN.rst>`__ \| `한국어 <./README/README-ko_KR.rst>`__
+English \| `简体中文 <./README-zh_CN.rst>`__ \| `한국어 <./README-ko_KR.rst>`__
 
 Skyline is an OpenStack dashboard optimized by UI and UE, support
 OpenStack Train+. It has a modern technology stack and ecology, is
@@ -216,17 +216,17 @@ Devstack Integration
 --------------------
 
 `Fast integration with Devstack to build an
-environment. <./devstack/README.rst>`__
+environment. <../devstack/README.rst>`__
 
 Kolla Ansible Deployment
 ------------------------
 
-`Kolla Ansible to build an environment. <./kolla/README.md>`__
+`Kolla Ansible to build an environment. <../kolla/README.md>`__
 
 |image1|
 
-.. |image0| image:: ./doc/source/images/logo/OpenStack_Project_Skyline_horizontal.png
-.. |image1| image:: ./doc/source/images/logo/nine-color-deer-64.png
+.. |image0| image:: ../doc/source/images/logo/OpenStack_Project_Skyline_horizontal.png
+.. |image1| image:: ../doc/source/images/logo/nine-color-deer-64.png
 
 FAQ
 ---

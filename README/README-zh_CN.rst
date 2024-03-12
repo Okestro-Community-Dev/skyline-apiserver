@@ -2,7 +2,7 @@
 OpenStack Skyline APIServer
 ===========================
 
-`English <../README.rst>`__ \| 简体中文 \| `한국어 <./README-ko_KR.rst>`__
+`English <./README-en.rst>`__ \| 简体中文 \| `한국어 <./README-ko_KR.rst>`__
 
 Skyline 是一个经过 UI 和 UE 优化过的 OpenStack 仪表盘，支持 OpenStack
 Train 及以上版本。Skyline 拥有现代化的技术栈和生态，更易于开发者维护和

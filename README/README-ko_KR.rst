@@ -2,7 +2,7 @@
 스카이라인 API 서버
 ===================
 
-`English <../README.rst>`__ \| `简体中文 <./README-zh_CN.rst>`__ \| 한국어
+`English <./README-en.rst>`__ \| `简体中文 <./README-zh_CN.rst>`__ \| 한국어
 
 스카이라인(지평선)은 UI와 UE에 의해 최적화된 오픈스택 대시보드로
 오픈스택 Train릴리즈 이상 버전을 지원합니다.
@@ -65,6 +65,7 @@
 
    `샘플 파일 <../etc/skyline.yaml.sample>`__ 을 참고 할수 있고,
    실제 환경에 따라 다음 파라미터를 수정합니다.
+         
    -  database_url
    -  keystone_url
    -  default_region
